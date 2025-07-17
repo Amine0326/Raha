@@ -42,7 +42,6 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return Directionality(textDirection: TextDirection.rtl, child: child!);
       },
-
       home: const SplashScreen(),
       routes: {
         '/home': (context) => const HomeScreen(),
