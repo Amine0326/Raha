@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -26,7 +26,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _initializeAnimations() {
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 5000),
       vsync: this,
     );
 
@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen>
     _logoFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+        curve: const Interval(0.0, 0.3, curve: Curves.easeIn),
       ),
     );
 
@@ -42,7 +42,7 @@ class _SplashScreenState extends State<SplashScreen>
     _logoScaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+        curve: const Interval(0.0, 0.4, curve: Curves.elasticOut),
       ),
     );
 
@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen>
         ).animate(
           CurvedAnimation(
             parent: _controller,
-            curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
+            curve: const Interval(0.0, 0.4, curve: Curves.easeOutBack),
           ),
         );
 
@@ -83,12 +83,13 @@ class _SplashScreenState extends State<SplashScreen>
     // Start animations
     _controller.forward();
 
-    // Navigate to home screen after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
+    // Navigate to login screen after animation completes + a small wait
+    // Animation duration is 5000ms + 1000ms wait = 6000ms total
+    Future.delayed(const Duration(milliseconds: 6000), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
     });
