@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/splash_screen.dart';
-import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
+import 'screens/main_navigation.dart';
+import 'screens/medical_centers_screen.dart';
+import 'screens/accommodations_screen.dart';
+import 'screens/transport_screen.dart';
+import 'screens/consultation_screen.dart';
+import 'screens/medical_journey_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,9 +32,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 
       // Localization settings
-      locale: const Locale('ar', 'SA'), // Arabic (Saudi Arabia)
+      locale: const Locale('ar', 'DZ'), // Arabic (Algeria)
       supportedLocales: const [
-        Locale('ar', 'SA'), // Arabic
+        Locale('ar', 'DZ'), // Arabic (Algeria)
         Locale('en', 'US'), // English
       ],
       localizationsDelegates: const [
@@ -44,9 +49,14 @@ class MyApp extends StatelessWidget {
       },
       home: const SplashScreen(),
       routes: {
-        '/home': (context) => const HomeScreen(),
+        '/dashboard': (context) => const MainNavigation(),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
+        '/medical-centers': (context) => const MedicalCentersScreen(),
+        '/accommodations': (context) => const AccommodationsScreen(),
+        '/transport': (context) => const TransportScreen(),
+        '/consultation': (context) => const ConsultationScreen(),
+        '/medical-journey': (context) => const MedicalJourneyScreen(),
       },
     );
   }

@@ -138,11 +138,8 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         );
 
-        // Navigate to login screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        // Navigate to dashboard after successful registration
+        Navigator.pushReplacementNamed(context, '/dashboard');
       }
     } else if (!_acceptTerms) {
       ScaffoldMessenger.of(context).showSnackBar(

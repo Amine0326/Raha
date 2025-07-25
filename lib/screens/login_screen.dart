@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       // Simulate login process
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(milliseconds: 1000));
 
       setState(() {
         _isLoading = false;
@@ -69,6 +69,13 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         );
+
+        // Navigate to dashboard after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/dashboard');
+          }
+        });
       }
     }
   }
