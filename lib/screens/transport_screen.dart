@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/transport_models.dart';
+import '../theme/app_theme.dart';
+import '../theme/theme_provider.dart' as theme_provider;
 
 class TransportScreen extends StatefulWidget {
   const TransportScreen({super.key});
@@ -8,15 +11,27 @@ class TransportScreen extends StatefulWidget {
   State<TransportScreen> createState() => _TransportScreenState();
 }
 
-class _TransportScreenState extends State<TransportScreen> {
+class _TransportScreenState extends State<TransportScreen>
+    with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   List<TransportService> _allServices = [];
   List<TransportService> _filteredServices = [];
+  ServiceLevel? _selectedServiceLevel;
+  VehicleType? _selectedVehicleType;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _tabController = TabController(length: 6, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _tabController.dispose();
+    super.dispose();
   }
 
   void _loadData() {
@@ -28,26 +43,40 @@ class _TransportScreenState extends State<TransportScreen> {
     setState(() {
       _filteredServices = _allServices.where((service) {
         final searchText = _searchController.text.toLowerCase();
-        final matchesSearch = searchText.isEmpty ||
+        final matchesSearch =
+            searchText.isEmpty ||
             service.name.toLowerCase().contains(searchText) ||
-            service.serviceAreas.any((area) => area.toLowerCase().contains(searchText)) ||
-            service.features.any((feature) => feature.toLowerCase().contains(searchText));
+            service.serviceAreas.any(
+              (area) => area.toLowerCase().contains(searchText),
+            ) ||
+            service.features.any(
+              (feature) => feature.toLowerCase().contains(searchText),
+            );
 
-        return matchesSearch;
+        final matchesServiceLevel =
+            _selectedServiceLevel == null ||
+            service.serviceLevel == _selectedServiceLevel;
+        final matchesVehicleType =
+            _selectedVehicleType == null ||
+            service.vehicleType == _selectedVehicleType;
+
+        return matchesSearch && matchesServiceLevel && matchesVehicleType;
       }).toList();
     });
   }
 
-  String _getTransportTypeText(TransportType type) {
-    switch (type) {
-      case TransportType.private:
-        return 'خاص';
-      case TransportType.taxi:
-        return 'تاكسي';
-      case TransportType.bus:
-        return 'حافلة';
-      case TransportType.shared:
-        return 'مشترك';
+  String _getServiceLevelText(ServiceLevel level) {
+    switch (level) {
+      case ServiceLevel.standard:
+        return 'ستاندرد';
+      case ServiceLevel.premium:
+        return 'بريميوم';
+      case ServiceLevel.vip:
+        return 'VIP';
+      case ServiceLevel.diamond:
+        return 'دايموند';
+      case ServiceLevel.urgent:
+        return 'طوارئ';
     }
   }
 
@@ -57,6 +86,8 @@ class _TransportScreenState extends State<TransportScreen> {
         return 'سيدان';
       case VehicleType.suv:
         return 'دفع رباعي';
+      case VehicleType.van:
+        return 'فان';
       case VehicleType.minibus:
         return 'حافلة صغيرة';
       case VehicleType.ambulance:
@@ -72,6 +103,8 @@ class _TransportScreenState extends State<TransportScreen> {
         return Icons.directions_car;
       case VehicleType.suv:
         return Icons.directions_car_filled;
+      case VehicleType.van:
+        return Icons.airport_shuttle;
       case VehicleType.minibus:
         return Icons.directions_bus;
       case VehicleType.ambulance:
@@ -81,160 +114,135 @@ class _TransportScreenState extends State<TransportScreen> {
     }
   }
 
-  Color _getServiceTypeColor(TransportType type) {
-    switch (type) {
-      case TransportType.private:
-        return const Color(0xFF2196F3);
-      case TransportType.taxi:
-        return const Color(0xFFFFB300);
-      case TransportType.bus:
+  Color _getServiceLevelColor(ServiceLevel level) {
+    switch (level) {
+      case ServiceLevel.standard:
         return const Color(0xFF4CAF50);
-      case TransportType.shared:
+      case ServiceLevel.premium:
+        return const Color(0xFF2196F3);
+      case ServiceLevel.vip:
         return const Color(0xFF9C27B0);
+      case ServiceLevel.diamond:
+        return const Color(0xFFFFD700);
+      case ServiceLevel.urgent:
+        return const Color(0xFFFF5722);
+    }
+  }
+
+  LinearGradient _getServiceLevelGradient(ServiceLevel level) {
+    switch (level) {
+      case ServiceLevel.standard:
+        return const LinearGradient(
+          colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+        );
+      case ServiceLevel.premium:
+        return const LinearGradient(
+          colors: [Color(0xFF2196F3), Color(0xFF42A5F5)],
+        );
+      case ServiceLevel.vip:
+        return const LinearGradient(
+          colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)],
+        );
+      case ServiceLevel.diamond:
+        return const LinearGradient(
+          colors: [Color(0xFFFFD700), Color(0xFFFFF176)],
+        );
+      case ServiceLevel.urgent:
+        return const LinearGradient(
+          colors: [Color(0xFFFF5722), Color(0xFFFF7043)],
+        );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6), // Cool gray background
-      appBar: AppBar(
-        title: const Text(
-          'خدمات النقل',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: const Color(0xFF1565C0), // Deep blue
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Column(
-        children: [
-          // Dynamic header section
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1565C0), // Deep blue
-                  Color(0xFF42A5F5), // Light blue
-                  Color(0xFF29B6F6), // Sky blue
-                ],
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-            ),
+    return Consumer<theme_provider.ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final isDark = themeProvider.isDarkMode;
+
+        return Scaffold(
+          backgroundColor: AppTheme.getBackgroundColor(isDark),
+          body: SafeArea(
             child: Column(
               children: [
-                // Search bar
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
+                // Modern Header
+                _buildModernHeader(context, isDark),
+
+                // Service Level Tabs
+                _buildServiceLevelTabs(context, isDark),
+
+                // Search and Filters
+                _buildSearchAndFilters(context, isDark),
+
+                // Services List
+                Expanded(child: _buildServicesList(context, isDark)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildModernHeader(BuildContext context, bool isDark) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Container(
+      padding: EdgeInsets.all(screenWidth * 0.05),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.getPrimaryColor(isDark),
+            AppTheme.getPrimaryColor(isDark).withValues(alpha: 0.8),
+          ],
+        ),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+              size: screenWidth * 0.06,
+            ),
+          ),
+          SizedBox(width: screenWidth * 0.03),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'خدمات النقل الطبي',
+                  style: TextStyle(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        spreadRadius: 0,
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.search,
-                        color: Color(0xFF757575),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: (value) => _filterServices(),
-                          decoration: const InputDecoration(
-                            hintText: 'ابحث عن خدمة نقل أو منطقة...',
-                            border: InputBorder.none,
-                            hintStyle: TextStyle(
-                              color: Color(0xFF757575),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    fontSize: screenWidth * 0.055,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 16),
-                // Transport info
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.directions_car,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        'وسائل نقل آمنة ومريحة للوصول إلى مراكز العلاج',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
+                SizedBox(height: screenWidth * 0.01),
+                Text(
+                  'اختر الخدمة المناسبة لاحتياجاتك',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: screenWidth * 0.035,
+                  ),
                 ),
               ],
             ),
           ),
-          // Results section
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'تم العثور على ${_filteredServices.length} خدمة نقل',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1565C0),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: _filteredServices.isEmpty
-                        ? _buildEmptyState()
-                        : ListView.builder(
-                            itemCount: _filteredServices.length,
-                            itemBuilder: (context, index) {
-                              return _buildTransportCard(_filteredServices[index]);
-                            },
-                          ),
-                  ),
-                ],
-              ),
+          Container(
+            padding: EdgeInsets.all(screenWidth * 0.03),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(screenWidth * 0.03),
+            ),
+            child: Icon(
+              Icons.local_taxi,
+              color: Colors.white,
+              size: screenWidth * 0.06,
             ),
           ),
         ],
@@ -242,18 +250,272 @@ class _TransportScreenState extends State<TransportScreen> {
     );
   }
 
-  Widget _buildTransportCard(TransportService service) {
+  Widget _buildServiceLevelTabs(BuildContext context, bool isDark) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      height: screenWidth * 0.15,
+      margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+      child: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        indicatorColor: AppTheme.getPrimaryColor(isDark),
+        labelColor: AppTheme.getPrimaryColor(isDark),
+        unselectedLabelColor: AppTheme.getHintColor(isDark),
+        onTap: (index) {
+          setState(() {
+            switch (index) {
+              case 0:
+                _selectedServiceLevel = null;
+                break;
+              case 1:
+                _selectedServiceLevel = ServiceLevel.standard;
+                break;
+              case 2:
+                _selectedServiceLevel = ServiceLevel.premium;
+                break;
+              case 3:
+                _selectedServiceLevel = ServiceLevel.vip;
+                break;
+              case 4:
+                _selectedServiceLevel = ServiceLevel.diamond;
+                break;
+              case 5:
+                _selectedServiceLevel = ServiceLevel.urgent;
+                break;
+            }
+            _filterServices();
+          });
+        },
+        tabs: [
+          Tab(text: 'الكل'),
+          Tab(text: 'ستاندرد'),
+          Tab(text: 'بريميوم'),
+          Tab(text: 'VIP'),
+          Tab(text: 'دايموند'),
+          Tab(text: 'طوارئ'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchAndFilters(BuildContext context, bool isDark) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Simple header
+          Text(
+            'اختر نوع المركبة',
+            style: TextStyle(
+              color: AppTheme.getOnSurfaceColor(isDark),
+              fontSize: screenWidth * 0.04,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          SizedBox(height: screenWidth * 0.03),
+
+          // Vehicle Type Filter
+          SizedBox(
+            height: screenWidth * 0.12,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildVehicleTypeChip(
+                  context,
+                  isDark,
+                  null,
+                  'الكل',
+                  Icons.apps,
+                ),
+                _buildVehicleTypeChip(
+                  context,
+                  isDark,
+                  VehicleType.sedan,
+                  'سيارات',
+                  Icons.directions_car,
+                ),
+                _buildVehicleTypeChip(
+                  context,
+                  isDark,
+                  VehicleType.van,
+                  'فانات',
+                  Icons.airport_shuttle,
+                ),
+                _buildVehicleTypeChip(
+                  context,
+                  isDark,
+                  VehicleType.ambulance,
+                  'إسعاف',
+                  Icons.local_hospital,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVehicleTypeChip(
+    BuildContext context,
+    bool isDark,
+    VehicleType? type,
+    String label,
+    IconData icon,
+  ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSelected = _selectedVehicleType == type;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedVehicleType = type;
+          _filterServices();
+        });
+      },
+      child: Container(
+        margin: EdgeInsets.only(right: screenWidth * 0.02),
+        padding: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.04,
+          vertical: screenWidth * 0.02,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.getPrimaryColor(isDark)
+              : AppTheme.getCardColor(isDark),
+          borderRadius: BorderRadius.circular(screenWidth * 0.06),
+          border: Border.all(
+            color: isSelected
+                ? AppTheme.getPrimaryColor(isDark)
+                : AppTheme.getHintColor(isDark).withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : AppTheme.getHintColor(isDark),
+              size: screenWidth * 0.04,
+            ),
+            SizedBox(width: screenWidth * 0.02),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : AppTheme.getOnSurfaceColor(isDark),
+                fontSize: screenWidth * 0.03,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServicesList(BuildContext context, bool isDark) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    if (_filteredServices.isEmpty) {
+      return _buildEmptyState(context, isDark);
+    }
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Results count
+          Padding(
+            padding: EdgeInsets.only(bottom: screenWidth * 0.03),
+            child: Text(
+              'تم العثور على ${_filteredServices.length} خدمة نقل',
+              style: TextStyle(
+                color: AppTheme.getOnSurfaceColor(isDark),
+                fontSize: screenWidth * 0.04,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+
+          // Services list
+          Expanded(
+            child: ListView.builder(
+              itemCount: _filteredServices.length,
+              itemBuilder: (context, index) {
+                return _buildServiceCard(
+                  context,
+                  isDark,
+                  _filteredServices[index],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, bool isDark) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.directions_car_outlined,
+            size: screenWidth * 0.2,
+            color: AppTheme.getHintColor(isDark),
+          ),
+          SizedBox(height: screenWidth * 0.05),
+          Text(
+            'لم يتم العثور على خدمات نقل',
+            style: TextStyle(
+              fontSize: screenWidth * 0.045,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.getOnSurfaceColor(isDark),
+            ),
+          ),
+          SizedBox(height: screenWidth * 0.02),
+          Text(
+            'جرب تغيير كلمات البحث أو الفلاتر',
+            style: TextStyle(
+              fontSize: screenWidth * 0.035,
+              color: AppTheme.getHintColor(isDark),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceCard(
+    BuildContext context,
+    bool isDark,
+    TransportService service,
+  ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final serviceColor = _getServiceLevelColor(service.serviceLevel);
+    final serviceGradient = _getServiceLevelGradient(service.serviceLevel);
+
+    return Container(
+      margin: EdgeInsets.only(bottom: screenWidth * 0.04),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        color: AppTheme.getCardColor(isDark),
+        borderRadius: BorderRadius.circular(screenWidth * 0.04),
         boxShadow: [
           BoxShadow(
-            color: _getServiceTypeColor(service.type).withOpacity(0.1),
-            spreadRadius: 0,
-            blurRadius: 12,
+            color: serviceColor.withValues(alpha: 0.2),
             offset: const Offset(0, 4),
+            blurRadius: 12,
           ),
         ],
       ),
@@ -261,233 +523,186 @@ class _TransportScreenState extends State<TransportScreen> {
         children: [
           // Header with gradient
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(screenWidth * 0.04),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  _getServiceTypeColor(service.type),
-                  _getServiceTypeColor(service.type).withOpacity(0.8),
-                ],
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(18),
-                topRight: Radius.circular(18),
+              gradient: serviceGradient,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(screenWidth * 0.04),
+                topRight: Radius.circular(screenWidth * 0.04),
               ),
             ),
             child: Row(
               children: [
+                // Vehicle icon
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(screenWidth * 0.03),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(screenWidth * 0.03),
                   ),
                   child: Icon(
                     _getVehicleIcon(service.vehicleType),
                     color: Colors.white,
-                    size: 24,
+                    size: screenWidth * 0.06,
                   ),
                 ),
-                const SizedBox(width: 12),
+
+                SizedBox(width: screenWidth * 0.03),
+
+                // Service info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         service.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        style: TextStyle(
                           color: Colors.white,
+                          fontSize: screenWidth * 0.045,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: screenWidth * 0.01),
                       Text(
                         'السائق: ${service.driverName}',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: screenWidth * 0.032,
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Rating and availability
-                Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star,
-                          size: 14,
-                          color: Color(0xFFFFD700),
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${service.rating}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+
+                // Service level badge
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.03,
+                    vertical: screenWidth * 0.01,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(screenWidth * 0.02),
+                  ),
+                  child: Text(
+                    _getServiceLevelText(service.serviceLevel),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: screenWidth * 0.028,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: service.isAvailable 
-                            ? const Color(0xFF4CAF50) 
-                            : const Color(0xFFFF5722),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        service.isAvailable ? 'متاح' : 'مشغول',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
           ),
-          // Content
+
+          // Content section - Clean and focused
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(screenWidth * 0.04),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Vehicle info and capacity
+                // Description
+                Text(
+                  service.description,
+                  style: TextStyle(
+                    color: AppTheme.getOnSurfaceColor(isDark),
+                    fontSize: screenWidth * 0.038,
+                    height: 1.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+
+                SizedBox(height: screenWidth * 0.04),
+
+                // Key info row
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getServiceTypeColor(service.type).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
+                    // Vehicle type
+                    Expanded(
+                      child: _buildInfoItem(
+                        context,
+                        isDark,
+                        'النوع',
                         _getVehicleTypeText(service.vehicleType),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: _getServiceTypeColor(service.type),
-                          fontWeight: FontWeight.w600,
-                        ),
+                        _getVehicleIcon(service.vehicleType),
+                        serviceColor,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF757575).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
+
+                    SizedBox(width: screenWidth * 0.04),
+
+                    // Capacity
+                    Expanded(
+                      child: _buildInfoItem(
+                        context,
+                        isDark,
+                        'السعة',
                         '${service.capacity} مقاعد',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF757575),
-                          fontWeight: FontWeight.w600,
-                        ),
+                        Icons.people,
+                        serviceColor,
                       ),
                     ),
-                    const Spacer(),
-                    if (service.isEmergencyService)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF5722).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'طوارئ',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFFFF5722),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    if (service.isMedicalEquipped)
-                      Container(
-                        margin: const EdgeInsets.only(left: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'مجهز طبياً',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF4CAF50),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                // Service areas
-                Text(
-                  'مناطق الخدمة: ${service.serviceAreas.join(' • ')}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF757575),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Features
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: service.features.take(3).map((feature) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _getServiceTypeColor(service.type).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+
+                SizedBox(height: screenWidth * 0.04),
+
+                // Price and booking section
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'السعر',
+                            style: TextStyle(
+                              color: AppTheme.getHintColor(isDark),
+                              fontSize: screenWidth * 0.032,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: screenWidth * 0.01),
+                          Text(
+                            '${service.baseFare.toInt()} دج',
+                            style: TextStyle(
+                              color: serviceColor,
+                              fontSize: screenWidth * 0.05,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Booking button
+                    ElevatedButton(
+                      onPressed: () => _onServiceTap(service),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: serviceColor,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: screenWidth * 0.08,
+                          vertical: screenWidth * 0.035,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            screenWidth * 0.03,
+                          ),
+                        ),
+                        elevation: 2,
                       ),
                       child: Text(
-                        feature,
+                        'احجز الآن',
                         style: TextStyle(
-                          fontSize: 10,
-                          color: _getServiceTypeColor(service.type),
-                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                          fontSize: screenWidth * 0.04,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 12),
-                // Book button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _onServiceTap(service),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _getServiceTypeColor(service.type),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                     ),
-                    child: const Text(
-                      'احجز الآن',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -497,32 +712,44 @@ class _TransportScreenState extends State<TransportScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return const Center(
+  Widget _buildInfoItem(
+    BuildContext context,
+    bool isDark,
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Container(
+      padding: EdgeInsets.all(screenWidth * 0.03),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(screenWidth * 0.03),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+      ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.directions_car_outlined,
-            size: 80,
-            color: Color(0xFFBDBDBD),
-          ),
-          SizedBox(height: 16),
+          Icon(icon, color: color, size: screenWidth * 0.06),
+          SizedBox(height: screenWidth * 0.02),
           Text(
-            'لم يتم العثور على خدمات نقل',
+            label,
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1565C0),
+              color: AppTheme.getHintColor(isDark),
+              fontSize: screenWidth * 0.028,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: screenWidth * 0.01),
           Text(
-            'جرب تغيير كلمات البحث',
+            value,
             style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF757575),
+              color: AppTheme.getOnSurfaceColor(isDark),
+              fontSize: screenWidth * 0.035,
+              fontWeight: FontWeight.bold,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -533,14 +760,9 @@ class _TransportScreenState extends State<TransportScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('حجز ${service.name} - قريباً'),
-        backgroundColor: _getServiceTypeColor(service.type),
+        backgroundColor: _getServiceLevelColor(service.serviceLevel),
+        behavior: SnackBarBehavior.floating,
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 }
